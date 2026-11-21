@@ -2,7 +2,6 @@ package subtitles
 
 import (
 	"errors"
-	"path"
 
 	"github.com/oz/osdb"
 	logger "github.com/spf13/jwalterweatherman"
@@ -90,6 +89,13 @@ func OpenSubtitles() OSDBAPI {
 	}
 }
 
+// LanguageToken returns the language token used by OpenSubtitles in subtitle
+// file names (e.g. "eng"). Implements LanguageTokenizer.
+func (s OSDBAPI) LanguageToken(language Language) (string, bool) {
+	lang, ok := osLangs[language.ID]
+	return lang, ok
+}
+
 // Download downloads the OpenSubtitles subtitle from a video
 func (s OSDBAPI) Download(videoPath string, language Language, downloadOptions ...func(*DownloadOptions)) (subtitlePath string, err error) {
 	c, err := osdb.NewClient()
@@ -106,7 +112,7 @@ func (s OSDBAPI) Download(videoPath string, language Language, downloadOptions .
 	if err = c.LogIn("", "", ""); err != nil {
 		return "", err
 	}
-	lang, ok := osLangs[language.ID]
+	lang, ok := s.LanguageToken(language)
 	if !ok {
 		return "", errors.New("Language exists but is not available for OpenSubtitles")
 	}
@@ -125,12 +131,7 @@ func (s OSDBAPI) Download(videoPath string, language Language, downloadOptions .
 	}
 
 	// Saving to disk
-	basePath := videoPath[0 : len(videoPath)-len(path.Ext(videoPath))]
-	if options.langInFileName {
-		subtitlePath = basePath + "." + lang + ".srt"
-	} else {
-		subtitlePath = basePath + ".srt"
-	}
+	subtitlePath = SubtitlePath(videoPath, lang, options.langInFileName)
 	if err := c.DownloadTo(best, subtitlePath); err != nil {
 		return "", err
 	}

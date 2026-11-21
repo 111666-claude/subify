@@ -34,6 +34,6 @@ func ExitVerbose(verboseLog string, format string, args ...interface{}) {
 	if !config.Verbose {
 		logger.ERROR.Println("Run subify with --verbose option to get more information about the error")
 	}
-	logger.FATAL.Printf(format)
+	logger.FATAL.Printf(format, args...)
 	os.Exit(-1)
 }

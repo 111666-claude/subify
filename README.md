@@ -82,6 +82,14 @@ subify dl <path_to_your_video> -l fr,es,en
 subify dl <path_to_your_video> -a add,os
 # Download subtitle with default language, by searching only in OpenSubtitles
 subify dl <path_to_your_video> -a OpenSubtitles
+
+# Download subtitles for every video of a directory (file name order, one failing
+# episode never interrupts the others). A per-video report is printed at the end.
+subify dl-dir <path_to_your_directory>
+# Same, but re-download subtitles that already exist instead of skipping them
+subify dl-dir <path_to_your_directory> --overwrite
+# Same language/API priority options as the single-file mode
+subify dl-dir <path_to_your_directory> -l fr,es,en -a add,os
 ```
 
 ## Documentation
@@ -95,6 +103,7 @@ Usage:
 
 Available Commands:
   dl          Download the subtitles for your video - 'subify dl --help'
+  dl-dir      Download subtitles for every video of a directory - 'subify dl-dir --help'
   help        Help about any command
   list        List information about something
   version     Get version of Subify
@@ -132,6 +141,38 @@ Global Flags:
       --dev             Instantiate development sandbox instead of production variables
   -v, --verbose         Print more information while executing
 
+```
+
+### Batch downloading command
+
+`subify dl-dir <directory>` scans a directory for supported videos (`.avi`, `.m4v`, `.mkv`, `.mov`, `.mp4`, `.wmv`, `.flv`, `.webm`, `.mpg`, `.mpeg`, `.ts`, case-insensitive) and downloads a subtitle for each of them, in file name order. It reuses the exact language and API priority, and the same subtitle file naming, as the single-file `dl` command.
+
+- A video whose subtitle already exists is **skipped** by default; pass `--overwrite` to re-download it.
+- One episode failing (no subtitle found, API error) never interrupts the remaining videos: every video gets a `downloaded`, `skipped`, `failed` or `conflict` status in a final table, and unsupported entries (directories, unknown extensions) are listed separately with a reason.
+- Videos sharing the same base name (e.g. `show.mp4` and `show.mkv`) are reported as `conflict` because they would write the same subtitle file.
+- The command exits with a non-zero status if at least one video failed or conflicted.
+
+```
+Download subtitles for every video (movie or TV Shows) contained in a directory.
+
+Usage:
+  subify dl-dir <directory-path> [flags]
+
+Aliases:
+  dl-dir, dldir, batch
+
+Flags:
+  -a, --apis string        Overwrite default searching APIs behavior (default "OpenSubtitles,Addic7ed")
+  -h, --help               help for dl-dir
+      --lang-in-filename   Language is in the filename (e.g. if enabled: 'xxx.English.srt' for English), else 'xxx.srt' (default true)
+  -l, --languages string   Languages of the subtitle separated by a comma (First to match is downloaded) (default "en")
+  -n, --notify             Display desktop notification (default false)
+      --overwrite          Overwrite a subtitle that already exists next to a video (default: skip the video)
+
+Global Flags:
+      --config string   Config file (default is $HOME/.subify.yaml|json|toml). Edit to change default behavior
+      --dev             Instantiate development sandbox instead of production variables
+  -v, --verbose         Print more information while executing
 ```
 
 ### Listing command
@@ -194,6 +235,8 @@ notify = false
 ```
 
 ## Release Notes
+* **Unreleased**
+  * New `subify dl-dir <directory>` command: batch download subtitles for every video of a directory, in file name order, with a per-video report (downloaded/skipped/failed/conflict) and `--overwrite` to replace existing subtitles
 * **0.6.0** Apr 2, 2025
   * Add option to not having the language in the subtitle file name (some player does not support that)
   * Removed Subdb (project is dead)

@@ -79,6 +79,13 @@ func Addic7ed() Addic7edAPI {
 	}
 }
 
+// LanguageToken returns the language name used by Addic7ed in subtitle file
+// names (e.g. "English"). Implements LanguageTokenizer.
+func (s Addic7edAPI) LanguageToken(language Language) (string, bool) {
+	lang, ok := addic7edLangs[language.ID]
+	return lang, ok
+}
+
 // Download downloads the Addic7ed subtitle from a video
 func (s Addic7edAPI) Download(videoPath string, language Language, downloadOptions ...func(*DownloadOptions)) (subtitlePath string, err error) {
 	c := addic7ed.New()
@@ -86,7 +93,7 @@ func (s Addic7edAPI) Download(videoPath string, language Language, downloadOptio
 	for _, o := range downloadOptions {
 		o(options)
 	}
-	lang, ok := addic7edLangs[language.ID]
+	lang, ok := s.LanguageToken(language)
 	if !ok {
 		return "", errors.New("Language exists but is not available for Addic7ed")
 	}
@@ -97,12 +104,7 @@ func (s Addic7edAPI) Download(videoPath string, language Language, downloadOptio
 	}
 
 	// Saving to disk
-	basePath := videoPath[0 : len(videoPath)-len(path.Ext(videoPath))]
-	if options.langInFileName {
-		subtitlePath = basePath + "." + lang + ".srt"
-	} else {
-		subtitlePath = basePath + ".srt"
-	}
+	subtitlePath = SubtitlePath(videoPath, lang, options.langInFileName)
 	if err := subtitle.DownloadTo(subtitlePath); err != nil {
 		return "", err
 	}
